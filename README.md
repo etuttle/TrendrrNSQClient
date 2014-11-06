@@ -72,17 +72,20 @@ for (int i=0; i < iterations; i++) {
 }
 ```
 
+## Connection parameters
 
-## Dependancies
+* `connection.messagesPerBatch` is the `RDY` value that is maintained for each nsqd connection.  Note that when throttling messages, nsqd subtracts the number of messages that have not yet been ack'd from this value.  `messagesPerBatch` can be used to limit the number of threads that will be used simultaneously for message callbacks (the maximum is messagesPerBatch * connections).
 
-* [netty][netty]
-* [slf4j][slf4j]
-* [trendrr-oss][trendrr-oss]
+## Threading
 
-Note: the trendrr-oss dependancy can easily be swapped out by implementing the com.trendrr.nsq.NSQLookup interface using a different json parser
+IO and protocol handling are done in threads managed by netty.
 
+Producers may write to an NSQClient from any thread (according to the netty thread model).
 
-[nsq]: https://github.com/bitly/nsq
-[netty]: http://netty.io/
-[slf4j]: http://www.slf4j.org/
-[trendrr-oss]: https://github.com/trendrr/java-oss-lib
+Consumer callbacks are run in a thread provided by a configurable Executor, which is by default a CachedThreadPool.  Use caution configuring the executor - if the number of concurrent threads is less than (messagesPerBatch * connections), tasks may back up in the executor's work queue.  Backing up messsages in a consumer isn't ideal - there may be other consumers ready to process them.
+
+## TODO
+
+* Backoff
+* Allow limiting the total number of messages processed concurrently across connections (total_rdy_count)
+* Support total_rdy_count < connections which will allow thread usage to be capped even if the number of nsqd producers grows.
