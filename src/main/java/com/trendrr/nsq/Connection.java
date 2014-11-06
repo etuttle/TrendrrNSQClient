@@ -131,7 +131,7 @@ public class Connection {
 			}
 
 			if (this.callback == null) {
-				log.warn("NO CAllback, dropping message: " + message);
+				log.warn("NO callback, dropping message: " + message);
 			} else {
 				this.callback.message(message);
 			}
@@ -143,7 +143,7 @@ public class Connection {
 
 
 	void heartbeat() {
-		log.info("HEARTBEAT!");
+		log.debug("HEARTBEAT!");
 		this.heartbeats++;
 		this.lastHeartbeat = new Date();
 		//send NOP here.
