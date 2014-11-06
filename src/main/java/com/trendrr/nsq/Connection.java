@@ -111,7 +111,7 @@ public class Connection {
 		if (frame instanceof MessageFrame) {
 			MessageFrame msg = (MessageFrame) frame;
 			long tot = this.totalMessages.incrementAndGet();
-			if (tot % messagesPerBatch > (messagesPerBatch / 2)) {
+			if (tot % messagesPerBatch >= Math.floor(messagesPerBatch / 2)) {
 				//request some more!
 				this.command(NSQCommand.instance("RDY " + this.messagesPerBatch));
 			}
