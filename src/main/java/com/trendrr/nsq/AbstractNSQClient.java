@@ -53,7 +53,7 @@ public abstract class AbstractNSQClient {
 	protected Timer timer = null;
 
 	//this executor is where the callback code is handled
-	protected Executor executor = Executors.newSingleThreadExecutor();
+	protected Executor executor = Executors.newCachedThreadPool();
 
 	/**
 	 * connects, ready to produce.
