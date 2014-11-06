@@ -110,11 +110,6 @@ public class Connection {
 
 		if (frame instanceof MessageFrame) {
 			MessageFrame msg = (MessageFrame) frame;
-			long tot = this.totalMessages.incrementAndGet();
-			if (tot % messagesPerBatch >= Math.floor(messagesPerBatch / 2)) {
-				//request some more!
-				this.command(NSQCommand.instance("RDY " + this.messagesPerBatch));
-			}
 
 			NSQMessage message = new NSQMessage();
 			message.setAttempts(msg.getAttempts());
@@ -122,6 +117,19 @@ public class Connection {
 			message.setId(msg.getMessageId());
 			message.setMessage(msg.getMessageBody());
 			message.setTimestamp(new Date(TimeUnit.NANOSECONDS.toMillis(msg.getTimestamp())));
+
+			if (client.getExecutor().isShutdown()) {
+				log.warn("Requeueing message received during shutdown.");
+				message.requeue();
+				return;
+			}
+
+			long tot = this.totalMessages.incrementAndGet();
+			if (tot % messagesPerBatch >= Math.floor(messagesPerBatch / 2)) {
+				//request some more!
+				this.command(NSQCommand.instance("RDY " + this.messagesPerBatch));
+			}
+
 			if (this.callback == null) {
 				log.warn("NO CAllback, dropping message: " + message);
 			} else {

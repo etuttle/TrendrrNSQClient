@@ -4,7 +4,9 @@ package com.trendrr.nsq;
  */
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import com.trendrr.nsq.exceptions.NoConnectionsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,5 +53,29 @@ public class NSQConsumer extends AbstractNSQClient {
 	@Override
 	public List<ConnectionAddress> lookupAddresses() {
 		return lookup.lookup(topic);
+	}
+
+	/**
+	 * Start an orderly shutdown.
+	 */
+	public void shutdown() {
+		log.info("Shutting down consumer");
+		this.timer.cancel();
+		this.executor.shutdown();
+		try {
+			for (Connection c : this.connections.getConnections()) {
+				log.debug("Sending RDY 0 to {}:{}", c.getHost(), c.getPort());
+				c.command(NSQCommand.instance("RDY 0"));
+			}
+		} catch (NoConnectionsException e) {
+		}
+	}
+
+	/**
+	 * Wait for an orderly shutdown to complete.
+	 */
+	boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+		log.info("Waiting for running threads to complete...");
+		return this.executor.awaitTermination(timeout, unit);
 	}
 }

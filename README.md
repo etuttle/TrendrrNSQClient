@@ -84,6 +84,27 @@ Producers may write to an NSQClient from any thread (according to the netty thre
 
 Consumer callbacks are run in a thread provided by a configurable Executor, which is by default a CachedThreadPool.  Use caution configuring the executor - if the number of concurrent threads is less than (messagesPerBatch * connections), tasks may back up in the executor's work queue.  Backing up messsages in a consumer isn't ideal - there may be other consumers ready to process them.
 
+## Clean shutdown
+
+The consumer has a `shutdown` method which attempts a clean shutdown: no new messages will be consumed, but message callbacks that are already in process will be allowed to complete.  To perform a clean shutdown on SIGINT, add a shutdown hook like the following to your main class:
+
+```
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				consumer.shutdown();
+
+				try {
+					if (consumer.awaitTermination(10, TimeUnit.SECONDS)) {
+						Runtime.getRuntime().halt(0);
+					}
+				} catch (InterruptedException e) {
+					log.warn("Timeout waiting for consumer to shutdown");
+				}
+			}
+		});
+```
+
 ## TODO
 
 * Backoff
